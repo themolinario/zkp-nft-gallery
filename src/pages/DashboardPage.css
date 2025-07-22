@@ -1,0 +1,228 @@
+.dashboard-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0c0c, #1a1a2e, #16213e);
+  color: white;
+}
+
+.dashboard-header {
+  padding: 40px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-header h1 {
+  font-size: 3rem;
+  background: linear-gradient(45deg, #bb86fc, #64ffda);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+}
+
+.dashboard-header p {
+  font-size: 1.2rem;
+  color: #ccc;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.main-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.side-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-card,
+.collections-card,
+.activity-card,
+.benefits-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-card h3,
+.collections-card h3,
+.activity-card h3,
+.benefits-card h3 {
+  color: #bb86fc;
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+}
+
+.verification-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.badge-icon {
+  font-size: 2rem;
+}
+
+.badge-text {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.profile-stat {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-stat .stat-number {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #64ffda;
+  margin-bottom: 5px;
+}
+
+.profile-stat .stat-label {
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+.no-profile {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+}
+
+.collections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.collection-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.collection-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.collection-name {
+  color: #64ffda;
+  font-weight: bold;
+}
+
+.collection-count {
+  color: #bb86fc;
+  font-size: 0.9rem;
+}
+
+.collection-progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.activity-list,
+.benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.activity-item,
+.benefit-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.activity-item.placeholder {
+  opacity: 0.6;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: transparent;
+}
+
+.activity-icon,
+.benefit-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.activity-content,
+.benefit-content {
+  flex: 1;
+}
+
+.activity-content p {
+  margin: 0 0 5px 0;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.benefit-progress {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  color: #64ffda;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-content {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .dashboard-header {
+    padding: 20px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .collection-info {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

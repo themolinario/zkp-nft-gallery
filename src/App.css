@@ -1,5 +1,10 @@
 .App {
-  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0c0c, #1a1a2e, #16213e);
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 
 .App-logo {
@@ -14,18 +19,79 @@
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  padding: 20px 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.App-link {
-  color: #61dafb;
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  background: linear-gradient(45deg, #bb86fc, #64ffda);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.App-header p {
+  margin: 10px 0 0 0;
+  font-size: 1.1rem;
+  color: #ccc;
+}
+
+.main-content {
+  flex: 1;
+  overflow-x: hidden;
+}
+
+.App-footer {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #888;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: auto;
+}
+
+/* Rimuovo gli stili vecchi che non servono più */
+.gallery-container,
+.control-container {
+  /* Questi stili ora sono gestiti dalle singole pagine */
+}
+
+/* Animazioni globali */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.App-header {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.main-content {
+  animation: fadeIn 1s ease-out 0.2s both;
+}
+
+/* Effetti di luce */
+.gallery-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(187, 134, 252, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 @keyframes App-logo-spin {
@@ -34,5 +100,13 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Stili responsivi globali */
+@media (max-width: 768px) {
+  .App-footer {
+    font-size: 0.8rem;
+    padding: 15px;
   }
 }

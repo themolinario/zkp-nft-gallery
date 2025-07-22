@@ -1,0 +1,338 @@
+.control-panel {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 15px;
+  padding: 25px;
+  margin: 20px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-panel h2 {
+  color: #64ffda;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+}
+
+.control-panel h3 {
+  color: #bb86fc;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #bb86fc;
+  padding-bottom: 5px;
+}
+
+.stats-section {
+  margin-bottom: 30px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 15px;
+}
+
+.stat {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #64ffda;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.keys-section {
+  margin-bottom: 30px;
+}
+
+.no-keys {
+  text-align: center;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.generate-btn, .regenerate-btn {
+  background: linear-gradient(45deg, #bb86fc, #64ffda);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+}
+
+.generate-btn:hover, .regenerate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(187, 134, 252, 0.4);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.keys-display {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.key-item {
+  margin-bottom: 20px;
+}
+
+.key-item label {
+  display: block;
+  color: #bb86fc;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.key-value {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.key-value span {
+  flex: 1;
+  font-family: monospace;
+  color: #64ffda;
+  margin-right: 10px;
+  word-break: break-all;
+}
+
+.key-value button {
+  background: rgba(100, 255, 218, 0.2);
+  border: 1px solid #64ffda;
+  border-radius: 5px;
+  padding: 5px 10px;
+  color: #64ffda;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.key-value button:hover {
+  background: rgba(100, 255, 218, 0.3);
+}
+
+.key-item small {
+  color: #f44336;
+  font-style: italic;
+  display: block;
+  margin-top: 5px;
+}
+
+.info-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.info-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.info-section li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-section li:last-child {
+  border-bottom: none;
+}
+
+.demo-keys {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.demo-keys h4 {
+  color: #ffc107;
+  margin-bottom: 10px;
+}
+
+.demo-keys p {
+  margin: 5px 0;
+  font-family: monospace;
+  color: #fff3cd;
+}
+
+.reputation-section {
+  margin-bottom: 30px;
+}
+
+.reputation-display {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.verification-level {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.level-badge {
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.reputation-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.rep-stat {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.rep-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #64ffda;
+  margin-bottom: 5px;
+}
+
+.rep-label {
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+.achievements {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 15px;
+}
+
+.achievements h4 {
+  color: #FFD700;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.achievement {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.achievement-icon {
+  font-size: 1.5rem;
+  margin-right: 10px;
+}
+
+.achievement-info {
+  flex: 1;
+}
+
+.achievement-info strong {
+  color: #FFD700;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.achievement-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.reset-btn:hover {
+  background: #d32f2f !important;
+  transform: translateY(-2px);
+}
+
+.unlocked-nfts-section {
+  margin-bottom: 30px;
+}
+
+.unlocked-nfts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.unlocked-nft-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  border-radius: 8px;
+}
+
+.nft-title {
+  font-weight: bold;
+  color: #fff;
+  flex: 1;
+}
+
+.nft-rarity {
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0 10px;
+}
+
+.exclusive-indicator {
+  font-size: 0.8rem;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 12px;
+  padding: 2px 8px;
+  color: #FFD700;
+}
+
+@media (max-width: 768px) {
+  .control-panel {
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+}
