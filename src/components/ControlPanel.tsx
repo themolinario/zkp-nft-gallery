@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { realisticZKPService } from '../services/zkpService';
+import { productionZKPService } from '../services/zkpService';
 import { useNFT } from '../contexts/NFTContext';
 import { UserReputation } from '../types/zkp';
 import './ControlPanel.css';
@@ -19,7 +19,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ unlockedCount, totalCount }
 
   useEffect(() => {
     // Update reputation when unlocked NFT count changes
-    const reputation = realisticZKPService.getUserReputation();
+    const reputation = productionZKPService.getUserReputation();
     setUserReputation(reputation);
   }, [unlockedCount]);
 
@@ -49,7 +49,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ unlockedCount, totalCount }
   };
 
   const resetData = async () => {
-    await realisticZKPService.resetUserData();
+    await productionZKPService.resetUserData();
     resetAssets(); // Reset anche gli NFT nel Context
     setUserReputation(null);
     setWalletAddress('');
@@ -57,7 +57,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ unlockedCount, totalCount }
 
   return (
     <div className="control-panel">
-      <h2>Realistic ZKP Dashboard</h2>
+      <h2>Production ZKP Dashboard</h2>
 
       <div className="stats-section">
         <h3>Gallery Statistics</h3>

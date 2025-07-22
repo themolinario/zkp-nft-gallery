@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ControlPanel from '../components/ControlPanel';
-import { realisticZKPService } from '../services/zkpService';
+import { productionZKPService } from '../services/zkpService';
 import { useNFT } from '../contexts/NFTContext';
 import { UserReputation } from '../types/zkp';
 import './DashboardPage.css';
@@ -25,7 +25,7 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     // Aggiorna reputation quando cambiano gli NFT sbloccati
-    const reputation = realisticZKPService.getUserReputation();
+    const reputation = productionZKPService.getUserReputation();
     setUserReputation(reputation);
   }, [unlockedCount]);
 

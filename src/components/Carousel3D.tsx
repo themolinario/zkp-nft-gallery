@@ -3,7 +3,7 @@ import {Canvas, useFrame} from '@react-three/fiber';
 import {Box, Environment, OrbitControls, Text} from '@react-three/drei';
 import {Group, Mesh} from 'three';
 import {NFTAsset} from '../types/zkp';
-import {realisticZKPService} from '../services/zkpService';
+import {productionZKPService} from '../services/zkpService';
 
 interface NFTFrameProps {
   asset: NFTAsset;
@@ -17,12 +17,9 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
   const meshRef = useRef<Mesh>(null);
   const groupRef = useRef<Group>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = async () => {
     if (!isActive || asset.isUnlocked) return;
-
-    setIsLoading(true);
 
     // Simulate wallet connection and ownership verification
     const walletAddress = prompt('Enter your wallet address to verify ownership:');
@@ -30,8 +27,8 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
 
     if (walletAddress && privateKey) {
       try {
-        // Use the new realistic ZKP system
-        const result = await realisticZKPService.proveNFTOwnership(
+        // Use the production ZKP system
+        const result = await productionZKPService.proveNFTOwnership(
           walletAddress,
           privateKey,
           asset
@@ -41,7 +38,7 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
           onUnlock(asset.id);
 
           // Check if there are unlocked exclusive contents
-          const exclusiveContent = await realisticZKPService.unlockExclusiveContent(asset);
+          const exclusiveContent = await productionZKPService.unlockExclusiveContent(asset);
 
           if (exclusiveContent.unlocked) {
             alert(`NFT unlocked! 🎉\n\nExclusive content available:\n${exclusiveContent.content?.description}`);
@@ -49,14 +46,20 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
             alert('NFT unlocked successfully! 🎉');
           }
         } else {
-          alert(`Verification failed: ${result.error}`);
+          // Show specific error message for invalid credentials
+          if (result.error?.includes('Private key does not match') ||
+              result.error?.includes('not verified on blockchain') ||
+              result.error?.includes('Verification failed')) {
+            alert(`❌ Error: Invalid credentials\n\nThe provided wallet address and private key combination is not valid or does not own this NFT.\n\nPlease check your credentials and try again.`);
+          } else {
+            // Generic user-friendly error message instead of showing technical error
+            alert(`❌ Error: Unable to verify ownership\n\nWe couldn't verify that you own this NFT. This could be due to:\n\n• Invalid wallet credentials\n• Network connectivity issues\n• NFT not found in your wallet\n\nPlease check your information and try again.`);
+          }
         }
       } catch (error) {
-        alert('Error during ZKP verification. Please try again.');
+        alert('❌ Error: Invalid credentials\n\nTechnical error during ZKP verification. Please check your wallet credentials and try again.');
       }
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -137,10 +140,8 @@ const CarouselGroup: React.FC<CarouselGroupProps> = ({ assets, currentIndex, onA
         const angle = (index * 2 * Math.PI) / assets.length;
         const x = Math.sin(angle) * radius;
         const z = Math.cos(angle) * radius;
-        // The angle to make the frame look at the user (outward) is simply angle
-        const lookAtUserAngle = angle;
 
-          return (
+        return (
           <NFTFrame
             key={asset.id}
             asset={asset}
@@ -332,4 +333,3 @@ const Carousel3D: React.FC<Carousel3DProps> = ({ assets, onAssetUnlock }) => {
 };
 
 export default Carousel3D;
-

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { realisticZKPService } from '../services/zkpService';
+import { productionZKPService } from '../services/zkpService';
 import { NFTAsset, CollectionProof } from '../types/zkp';
 import './CollectionsPage.css';
 
@@ -64,7 +64,7 @@ const CollectionsPage: React.FC = () => {
     const ownedNFTs: NFTAsset[] = []; // In produzione, questi verrebbero dalla blockchain
 
     try {
-      const proof = await realisticZKPService.proveCollectionOwnership(
+      const proof = await productionZKPService.proveCollectionOwnership(
         mockWallet,
         collectionName,
         ownedNFTs

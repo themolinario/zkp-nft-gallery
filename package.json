@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@noble/hashes": "^1.8.0",
     "@react-three/drei": "^10.5.1",
     "@react-three/fiber": "^9.2.0",
     "@testing-library/dom": "^10.4.0",
@@ -16,6 +17,8 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/three": "^0.178.1",
     "circomlib": "^2.0.5",
+    "crypto-js": "^4.2.0",
+    "ethers": "^6.15.0",
     "ffjavascript": "^0.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -24,7 +27,8 @@
     "snarkjs": "^0.7.5",
     "three": "^0.178.0",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "web3": "^4.16.0"
   },
   "scripts": {
     "start": "react-scripts start",

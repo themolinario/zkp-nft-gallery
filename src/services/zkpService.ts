@@ -1,58 +1,280 @@
 import { groth16 } from 'snarkjs';
-import { ZKProof, OwnershipCircuitInputs, NFTAsset, UserReputation, CollectionProof, Achievement } from '../types/zkp';
+import { ethers } from 'ethers';
+import { sha256 } from '@noble/hashes/sha256';
+import { poseidon } from 'circomlib';
+import { ZKProof, NFTAsset, UserReputation, CollectionProof, Achievement } from '../types/zkp';
 
-class RealisticZKPService {
-  private wasmPath = '/circuits/ownership_circuit.wasm';
+// Helper function for Poseidon hash
+const poseidonHash = async (inputs: (string | number | bigint)[]): Promise<string> => {
+  try {
+    return poseidon(inputs).toString();
+  } catch (error) {
+    // Fallback using SHA256 if poseidon is not available
+    const combinedInput = inputs.join('');
+    const hash = sha256(new TextEncoder().encode(combinedInput));
+    return BigInt('0x' + Array.from(hash, (byte: number) => byte.toString(16).padStart(2, '0')).join('')).toString();
+  }
+};
+
+// Cache for ZKP proofs
+interface ProofCache {
+  [key: string]: {
+    proof: ZKProof;
+    timestamp: number;
+    expires: number;
+  };
+}
+
+class ProductionZKPService {
+  private wasmPath = '/circuits/ownership.wasm';
   private zkeyPath = '/circuits/ownership_final.zkey';
+  private vkeyPath = '/circuits/verification_key.json';
   private userReputation: UserReputation | null = null;
+  private nullifierSet = new Set<string>();
+  private proofCache: ProofCache = {};
+  private verificationKeyCache: any = null;
 
-  // Generate realistic ownership hash
-  generateOwnershipHash(walletAddress: string, tokenId: string, contractAddress: string): string {
-    const combinedData = `${walletAddress.toLowerCase()}-${contractAddress.toLowerCase()}-${tokenId}-${Date.now()}`;
-    return this.sha256Hash(combinedData);
+  // Advanced configuration
+  private readonly config = {
+    maxProofTime: parseInt(process.env.REACT_APP_MAX_PROOF_TIME || '30000'),
+    enableDebug: process.env.REACT_APP_ENABLE_DEBUG === 'true',
+    cacheProofs: process.env.REACT_APP_CACHE_PROOFS !== 'false',
+    cacheDuration: parseInt(process.env.REACT_APP_CACHE_DURATION || '3600000'), // 1 hour
+    maxNullifiers: parseInt(process.env.REACT_APP_MAX_NULLIFIERS || '10000')
+  };
+
+  constructor() {
+    // Clean cache periodically
+    if (this.config.cacheProofs) {
+      setInterval(() => this.cleanExpiredProofs(), 300000); // every 5 minutes
+    }
   }
 
-  // Prove ownership of a specific NFT using ZKP
+  // Generate real ownership hash using Poseidon (now used)
+  async generateOwnershipHash(walletAddress: string, tokenId: string, contractAddress: string): Promise<string> {
+    const inputs = [
+      this.addressToField(walletAddress),
+      this.addressToField(contractAddress),
+      BigInt(tokenId),
+      BigInt(Math.floor(Date.now() / 1000)) // timestamp
+    ];
+
+    return await poseidonHash(inputs);
+  }
+
+  // Real implementation of NFT ownership proof using ZKP with caching
   async proveNFTOwnership(
     walletAddress: string,
     privateKey: string,
     nft: NFTAsset
   ): Promise<{ success: boolean; proof?: ZKProof; error?: string }> {
-    try {
-      // Verify that the user knows the necessary details for ownership
-      const expectedHash = this.generateOwnershipHash(walletAddress, nft.tokenId, nft.contractAddress);
+    const startTime = Date.now();
 
-      // Input for ZKP circuit (in a real implementation)
-      const inputs: OwnershipCircuitInputs = {
-        walletAddress: this.hashData(walletAddress),
-        privateKey: this.hashData(privateKey),
-        nonce: Math.random().toString(),
-        contractAddress: this.hashData(nft.contractAddress),
-        tokenId: nft.tokenId,
-        expectedHash: expectedHash
+    try {
+      // Verify that private key matches wallet address
+      const wallet = new ethers.Wallet(privateKey);
+      if (wallet.address.toLowerCase() !== walletAddress.toLowerCase()) {
+        return { success: false, error: 'Private key does not match wallet address' };
+      }
+
+      // Check cache for existing proofs
+      const cacheKey = this.generateProofCacheKey(walletAddress, nft);
+      if (this.config.cacheProofs && this.proofCache[cacheKey] && this.proofCache[cacheKey].expires > Date.now()) {
+        this.log('Using cached proof for NFT ownership');
+        return { success: true, proof: this.proofCache[cacheKey].proof };
+      }
+
+      // Verify on-chain NFT ownership
+      const ownsNFT = await this.verifyOnChainOwnership(walletAddress, nft);
+      if (!ownsNFT) {
+        return { success: false, error: 'NFT ownership not verified on blockchain' };
+      }
+
+      // Generate random nonce to prevent replay attacks
+      const nonce = this.generateSecureNonce();
+
+      // Prepare inputs for ZKP circuit
+      const circuitInputs = {
+        privateKey: this.privateKeyToField(privateKey),
+        nonce: this.stringToField(nonce),
+        publicAddress: this.addressToField(walletAddress),
+        contractAddress: this.addressToField(nft.contractAddress),
+        tokenId: BigInt(nft.tokenId),
+        timestamp: BigInt(Math.floor(Date.now() / 1000))
       };
 
-      // Simulate real ZKP proof generation
-      const proof = await this.generateMockZKProof(inputs);
+      // Generate real ZKP proof with timeout
+      const proof = await this.generateRealZKProofWithTimeout(circuitInputs);
 
       // Verify the proof
-      const isValid = await this.verifyOwnershipProof(proof, nft);
+      const isValid = await this.verifyOwnershipProof(proof);
 
       if (isValid) {
+        // Check nullifier to prevent double-spending
+        const nullifier = proof.publicSignals[1];
+        if (this.nullifierSet.has(nullifier)) {
+          return { success: false, error: 'Proof already used (nullifier collision)' };
+        }
+
+        // Manage nullifier limit
+        if (this.nullifierSet.size >= this.config.maxNullifiers) {
+          this.nullifierSet.clear(); // Reset if we reach the limit
+          this.log('Nullifier set reset due to size limit');
+        }
+
+        this.nullifierSet.add(nullifier);
+
+        // Cache the proof if enabled
+        if (this.config.cacheProofs) {
+          this.proofCache[cacheKey] = {
+            proof,
+            timestamp: Date.now(),
+            expires: Date.now() + this.config.cacheDuration
+          };
+        }
+
         // Update user reputation
         await this.updateUserReputation(nft);
 
+        const duration = Date.now() - startTime;
+        this.log(`ZKP proof generated successfully in ${duration}ms`);
+
         return { success: true, proof };
       } else {
-        return { success: false, error: 'Ownership verification failed' };
+        return { success: false, error: 'ZKP verification failed' };
       }
     } catch (error) {
-      console.error('Error in ownership proof:', error);
-      return { success: false, error: 'Technical error during proof generation' };
+      const duration = Date.now() - startTime;
+      this.log(`Error in ownership proof after ${duration}ms:`, error);
+      return { success: false, error: `Technical error: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }
 
-  // Prove ownership of an entire collection (for premium benefits)
+  // Verify on-chain NFT ownership with retry and fallback
+  private async verifyOnChainOwnership(walletAddress: string, nft: NFTAsset): Promise<boolean> {
+    const providers = [
+      process.env.REACT_APP_RPC_URL || 'https://mainnet.infura.io/v3/YOUR_KEY',
+      process.env.REACT_APP_POLYGON_RPC_URL,
+      process.env.REACT_APP_TESTNET_RPC_URL
+    ].filter(Boolean);
+
+    for (const providerUrl of providers) {
+      try {
+        const provider = new ethers.JsonRpcProvider(providerUrl);
+
+        // Simplified ABI for ERC721
+        const erc721ABI = [
+          "function ownerOf(uint256 tokenId) view returns (address)"
+        ];
+
+        const contract = new ethers.Contract(nft.contractAddress, erc721ABI, provider);
+        const owner = await contract.ownerOf(nft.tokenId);
+
+        return owner.toLowerCase() === walletAddress.toLowerCase();
+      } catch (error) {
+        this.log(`Error with provider ${providerUrl}:`, error);
+        // Try the next provider (removing unnecessary continue)
+      }
+    }
+
+    this.log('All providers failed for on-chain verification');
+    return false;
+  }
+
+  // Generate real ZKP proof using snarkjs with timeout
+  private async generateRealZKProofWithTimeout(inputs: any): Promise<ZKProof> {
+    return new Promise(async (resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`ZKP generation timeout after ${this.config.maxProofTime}ms`));
+      }, this.config.maxProofTime);
+
+      try {
+        const { proof, publicSignals } = await groth16.fullProve(
+          inputs,
+          this.wasmPath,
+          this.zkeyPath
+        );
+
+        clearTimeout(timeout);
+
+        resolve({
+          proof: {
+            pi_a: proof.pi_a.map((x: any) => x.toString()),
+            pi_b: proof.pi_b.map((row: any) => row.map((x: any) => x.toString())),
+            pi_c: proof.pi_c.map((x: any) => x.toString()),
+            protocol: "groth16",
+            curve: "bn128"
+          },
+          publicSignals: publicSignals.map((x: any) => x.toString())
+        });
+      } catch (error) {
+        clearTimeout(timeout);
+        reject(new Error(`ZKP generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+      }
+    });
+  }
+
+  // Real verification of ZKP proof with verification key caching (removed unused parameter)
+  private async verifyOwnershipProof(proof: ZKProof): Promise<boolean> {
+    try {
+      const vKey = await this.loadVerificationKeyWithCache();
+
+      return await groth16.verify(
+        vKey,
+        proof.publicSignals,
+        proof.proof
+      );
+    } catch (error) {
+      this.log('Error verifying ZKP:', error);
+      return false;
+    }
+  }
+
+  // Load real verification key with caching
+  private async loadVerificationKeyWithCache(): Promise<any> {
+    if (this.verificationKeyCache) {
+      return this.verificationKeyCache;
+    }
+
+    try {
+      const response = await fetch(this.vkeyPath);
+      if (!response.ok) {
+        throw new Error('Failed to load verification key');
+      }
+
+      this.verificationKeyCache = await response.json();
+      return this.verificationKeyCache;
+    } catch (error) {
+      throw new Error(`Failed to load verification key: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Utility for cache management
+  private generateProofCacheKey(walletAddress: string, nft: NFTAsset): string {
+    return this.sha256Hash(`${walletAddress}_${nft.contractAddress}_${nft.tokenId}`);
+  }
+
+  private cleanExpiredProofs(): void {
+    const now = Date.now();
+    const expiredKeys = Object.keys(this.proofCache).filter(
+      key => this.proofCache[key].expires < now
+    );
+
+    expiredKeys.forEach(key => delete this.proofCache[key]);
+
+    if (expiredKeys.length > 0) {
+      this.log(`Cleaned ${expiredKeys.length} expired proofs from cache`);
+    }
+  }
+
+  // Logging utility
+  private log(message: string, data?: any): void {
+    if (this.config.enableDebug) {
+      console.log(`[ZKPService] ${message}`, data || '');
+    }
+  }
+
+  // Collection ownership proof using ZKP aggregation
   async proveCollectionOwnership(
     walletAddress: string,
     collectionName: string,
@@ -62,22 +284,129 @@ class RealisticZKPService {
 
     if (collectionNFTs.length === 0) return null;
 
-    // Calculate benefits based on collection
-    const benefits = this.calculateCollectionBenefits(collectionName, collectionNFTs.length);
+    try {
+      // Verify ownership for each NFT in the collection
+      for (const nft of collectionNFTs) {
+        const ownershipResult = await this.verifyOnChainOwnership(walletAddress, nft);
+        if (!ownershipResult) {
+          throw new Error(`Ownership verification failed for NFT ${nft.tokenId}`);
+        }
+      }
 
-    // Generate aggregated proof for collection
-    const aggregatedProof = await this.generateCollectionProof(collectionNFTs, walletAddress);
+      // Calculate benefits based on collection
+      const benefits = this.calculateCollectionBenefits(collectionNFTs.length);
 
-    return {
-      collectionName,
-      minimumNFTs: this.getMinimumForCollection(collectionName),
-      ownedCount: collectionNFTs.length,
-      proof: aggregatedProof,
-      benefits
-    };
+      // Generate aggregated proof (simplified for demo)
+      const aggregatedProof = await this.generateCollectionAggregatedProof(collectionNFTs, walletAddress);
+
+      return {
+        collectionName,
+        minimumNFTs: this.getMinimumForCollection(collectionName),
+        ownedCount: collectionNFTs.length,
+        proof: aggregatedProof,
+        benefits
+      };
+    } catch (error) {
+      this.log('Error proving collection ownership:', error);
+      return null;
+    }
   }
 
-  // ZKP-based reputation system
+  // Anonymous verification using pure ZKP (now used)
+  async verifyAnonymousOwnership(
+    proof: ZKProof,
+    nftContractAddress: string,
+    tokenId: string
+  ): Promise<boolean> {
+    try {
+      const vKey = await this.loadVerificationKeyWithCache();
+
+      // Verify that public signals match the required parameters
+      const expectedContractHash = this.addressToField(nftContractAddress).toString();
+      const expectedTokenId = BigInt(tokenId).toString();
+
+      const validContract = proof.publicSignals[0] === expectedContractHash;
+      const validTokenId = proof.publicSignals[2] === expectedTokenId;
+
+      if (!validContract || !validTokenId) {
+        return false;
+      }
+
+      // Verify the ZKP proof
+      return await groth16.verify(vKey, proof.publicSignals, proof.proof);
+    } catch (error) {
+      this.log('Error in anonymous verification:', error);
+      return false;
+    }
+  }
+
+  // Utility functions for converting data to field elements
+  private addressToField(address: string): bigint {
+    // Convert Ethereum address to field element (improved)
+    const cleanAddress = address.toLowerCase().replace('0x', '');
+    return BigInt('0x' + cleanAddress);
+  }
+
+  private privateKeyToField(privateKey: string): bigint {
+    // Convert private key to field element
+    const cleanKey = privateKey.startsWith('0x') ? privateKey.slice(2) : privateKey;
+    return BigInt('0x' + cleanKey);
+  }
+
+  private stringToField(str: string): bigint {
+    // Convert string to field element using hash (fix for unknown type)
+    const hash = sha256(new TextEncoder().encode(str));
+    return BigInt('0x' + Array.from(hash, (byte: number) => byte.toString(16).padStart(2, '0')).join(''));
+  }
+
+  private generateSecureNonce(): string {
+    // Generate cryptographically secure nonce
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Real SHA256 hash instead of simulation (fix for unknown type)
+  private sha256Hash(data: string): string {
+    const hash = sha256(new TextEncoder().encode(data));
+    return Array.from(hash, (byte: number) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  private async generateCollectionAggregatedProof(nfts: NFTAsset[], walletAddress: string): Promise<ZKProof> {
+    // Simplified implementation - in production you would use an aggregation circuit
+    const firstNFT = nfts[0];
+    const inputs = {
+      privateKey: this.stringToField('collection_proof'),
+      nonce: this.stringToField(Math.random().toString()),
+      publicAddress: this.addressToField(walletAddress),
+      contractAddress: this.addressToField(firstNFT.contractAddress),
+      tokenId: BigInt(nfts.length),
+      timestamp: BigInt(Math.floor(Date.now() / 1000))
+    };
+
+    return await this.generateRealZKProofWithTimeout(inputs);
+  }
+
+  private calculateCollectionBenefits(ownedCount: number): string[] {
+    const benefits: string[] = [];
+
+    if (ownedCount >= 1) benefits.push('Access to exclusive collection chat');
+    if (ownedCount >= 3) benefits.push('Discounts on future collection NFTs');
+    if (ownedCount >= 5) benefits.push('Early access to exclusive drops');
+    if (ownedCount >= 10) benefits.push('VIP status and behind-the-scenes content');
+
+    return benefits;
+  }
+
+  private getMinimumForCollection(collectionName: string): number {
+    const requirements: { [key: string]: number } = {
+      'Van Gogh Collection': 3,
+      'Modern Masters': 5,
+      'Digital Pioneers': 2
+    };
+    return requirements[collectionName] || 1;
+  }
+
   async updateUserReputation(nft: NFTAsset): Promise<void> {
     if (!this.userReputation) {
       this.userReputation = {
@@ -91,108 +420,12 @@ class RealisticZKPService {
 
     this.userReputation.totalNFTsOwned++;
 
-    // Increment rare NFTs if applicable
     if (nft.rarity === 'epic' || nft.rarity === 'legendary') {
       this.userReputation.rareNFTsOwned++;
     }
 
-    // Check achievements
     await this.checkAndUnlockAchievements(nft);
-
-    // Update verification level
     this.updateVerificationLevel();
-  }
-
-  // Unlock exclusive content based on ZKP ownership
-  async unlockExclusiveContent(nft: NFTAsset): Promise<{
-    unlocked: boolean;
-    content?: any;
-    requirements?: string;
-  }> {
-    if (!nft.exclusiveContent) {
-      return { unlocked: false, requirements: 'No exclusive content available' };
-    }
-
-    // Verify requirements for exclusive content
-    const meetsRequirements = await this.checkExclusiveContentRequirements(nft);
-
-    if (meetsRequirements) {
-      return {
-        unlocked: true,
-        content: {
-          type: nft.exclusiveContent.type,
-          url: nft.exclusiveContent.url,
-          description: nft.exclusiveContent.description,
-          accessGrantedAt: new Date().toISOString()
-        }
-      };
-    }
-
-    return {
-      unlocked: false,
-      requirements: this.getContentRequirements(nft)
-    };
-  }
-
-  // Privacy-preserving verification: check ownership without revealing wallet
-  async verifyAnonymousOwnership(
-    proof: ZKProof,
-    nftContractAddress: string,
-    tokenId: string
-  ): Promise<boolean> {
-    try {
-      // In a real implementation, this would verify the ZKP proof
-      // against public signals without revealing the user's wallet
-      const vKey = await this.getVerificationKey();
-
-      // Verify that public signals match contract + tokenId
-      const expectedPublicSignals = [
-        this.hashData(nftContractAddress),
-        tokenId
-      ];
-
-      // Simulate real ZKP verification
-      return await groth16.verify(vKey, expectedPublicSignals, proof.proof);
-    } catch (error) {
-      console.error('Error in anonymous verification:', error);
-      return false;
-    }
-  }
-
-  // Utilità private
-  private async generateMockZKProof(inputs: OwnershipCircuitInputs): Promise<ZKProof> {
-    // Simula la generazione di una vera prova ZKP
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simula tempo di calcolo
-
-    return {
-      proof: {
-        pi_a: [Math.random().toString(), Math.random().toString()],
-        pi_b: [[Math.random().toString()], [Math.random().toString()]],
-        pi_c: [Math.random().toString(), Math.random().toString()],
-        protocol: "groth16",
-        curve: "bn128"
-      },
-      publicSignals: [
-        inputs.contractAddress.toString(),
-        inputs.tokenId.toString()
-      ]
-    };
-  }
-
-  private async verifyOwnershipProof(proof: ZKProof, nft: NFTAsset): Promise<boolean> {
-    // Simula verifica (in produzione userebbe veri circuiti)
-    return proof.publicSignals.includes(this.hashData(nft.contractAddress));
-  }
-
-  private calculateCollectionBenefits(collectionName: string, ownedCount: number): string[] {
-    const benefits: string[] = [];
-
-    if (ownedCount >= 1) benefits.push('Access to exclusive collection chat');
-    if (ownedCount >= 3) benefits.push('Discounts on future collection NFTs');
-    if (ownedCount >= 5) benefits.push('Early access to exclusive drops');
-    if (ownedCount >= 10) benefits.push('VIP status and behind-the-scenes content');
-
-    return benefits;
   }
 
   private async checkAndUnlockAchievements(nft: NFTAsset): Promise<void> {
@@ -222,7 +455,6 @@ class RealisticZKPService {
       }
     ];
 
-    // Check achievements
     if (this.userReputation.totalNFTsOwned === 1) {
       this.unlockAchievement(achievements[0]);
     }
@@ -256,15 +488,43 @@ class RealisticZKPService {
     }
   }
 
+  async unlockExclusiveContent(nft: NFTAsset): Promise<{
+    unlocked: boolean;
+    content?: any;
+    requirements?: string;
+  }> {
+    if (!nft.exclusiveContent) {
+      return { unlocked: false, requirements: 'No exclusive content available' };
+    }
+
+    const meetsRequirements = await this.checkExclusiveContentRequirements(nft);
+
+    if (meetsRequirements) {
+      return {
+        unlocked: true,
+        content: {
+          type: nft.exclusiveContent.type,
+          url: nft.exclusiveContent.url,
+          description: nft.exclusiveContent.description,
+          accessGrantedAt: new Date().toISOString()
+        }
+      };
+    }
+
+    return {
+      unlocked: false,
+      requirements: this.getContentRequirements(nft)
+    };
+  }
+
   private async checkExclusiveContentRequirements(nft: NFTAsset): Promise<boolean> {
-    // Requirements based on rarity and reputation
     if (nft.rarity === 'legendary') {
       return this.userReputation?.verificationLevel === 'diamond' || false;
     }
     if (nft.rarity === 'epic') {
       return ['gold', 'diamond'].includes(this.userReputation?.verificationLevel || 'bronze');
     }
-    return true; // Common and rare have no special requirements
+    return true;
   }
 
   private getContentRequirements(nft: NFTAsset): string {
@@ -277,61 +537,58 @@ class RealisticZKPService {
     return 'No special requirements';
   }
 
-  private getMinimumForCollection(collectionName: string): number {
-    // Requisiti minimi per collezione
-    const requirements: { [key: string]: number } = {
-      'Van Gogh Collection': 3,
-      'Modern Masters': 5,
-      'Digital Pioneers': 2
-    };
-    return requirements[collectionName] || 1;
-  }
-
-  private async generateCollectionProof(nfts: NFTAsset[], walletAddress: string): Promise<ZKProof> {
-    // Simula aggregated proof per collezione
-    return this.generateMockZKProof({
-      walletAddress: this.hashData(walletAddress),
-      privateKey: 'collection_proof',
-      nonce: Math.random().toString(),
-      contractAddress: nfts[0]?.contractAddress || '',
-      tokenId: nfts.length.toString(),
-      expectedHash: 'collection_hash'
-    });
-  }
-
-  private async getVerificationKey(): Promise<any> {
-    // In produzione, caricherebbe la vera verification key
-    return {
-      protocol: "groth16",
-      curve: "bn128",
-      nPublic: 2,
-      // ... altri parametri della verification key
-    };
-  }
-
-  private sha256Hash(data: string): string {
-    // Simulazione di SHA256 - in produzione usare crypto vero
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
-  }
-
-  private hashData(data: string): string {
-    return this.sha256Hash(data);
-  }
-
-  // API pubbliche
+  // Advanced public APIs
   getUserReputation(): UserReputation | null {
     return this.userReputation;
   }
 
   async resetUserData(): Promise<void> {
     this.userReputation = null;
+    this.nullifierSet.clear();
+    this.proofCache = {};
+    this.log('User data reset completed');
+  }
+
+  // New APIs for monitoring
+  getCacheStats(): { size: number; hitRate: number } {
+    return {
+      size: Object.keys(this.proofCache).length,
+      hitRate: 0 // To be implemented with counters
+    };
+  }
+
+  getNullifierCount(): number {
+    return this.nullifierSet.size;
+  }
+
+  async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'unhealthy'; details: string[] }> {
+    const details: string[] = [];
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+
+    try {
+      // Verify verification key loading
+      await this.loadVerificationKeyWithCache();
+      details.push('Verification key loaded successfully');
+    } catch (error) {
+      details.push('Failed to load verification key');
+      status = 'unhealthy';
+    }
+
+    // Verify RPC provider availability
+    try {
+      const provider = new ethers.JsonRpcProvider(process.env.REACT_APP_RPC_URL || 'https://mainnet.infura.io/v3/YOUR_KEY');
+      await provider.getBlockNumber();
+      details.push('RPC provider accessible');
+    } catch (error) {
+      details.push('RPC provider not accessible');
+      status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
+    }
+
+    details.push(`Cache size: ${Object.keys(this.proofCache).length}`);
+    details.push(`Nullifier count: ${this.nullifierSet.size}`);
+
+    return { status, details };
   }
 }
 
-export const realisticZKPService = new RealisticZKPService();
+export const productionZKPService = new ProductionZKPService();

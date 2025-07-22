@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Box, Environment } from '@react-three/drei';
 import { Mesh } from 'three';
 import { NFTAsset } from '../types/zkp';
-import { realisticZKPService } from '../services/zkpService';
+import { productionZKPService } from '../services/zkpService';
 
 interface NFTFrameProps {
   asset: NFTAsset;
@@ -13,21 +13,18 @@ interface NFTFrameProps {
 const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
   const meshRef = useRef<Mesh>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = async () => {
     if (asset.isUnlocked) return;
 
-    setIsLoading(true);
-
-    // Simula wallet connection e ownership verification
-    const walletAddress = prompt('Inserisci il tuo wallet address per verificare ownership:');
-    const privateKey = prompt('Inserisci la tua chiave privata (simulata):');
+    // Simulate wallet connection and ownership verification
+    const walletAddress = prompt('Enter your wallet address to verify ownership:');
+    const privateKey = prompt('Enter your private key (simulated):');
 
     if (walletAddress && privateKey) {
       try {
-        // Usa il nuovo sistema ZKP realistico
-        const result = await realisticZKPService.proveNFTOwnership(
+        // Use the production ZKP system
+        const result = await productionZKPService.proveNFTOwnership(
           walletAddress,
           privateKey,
           asset
@@ -36,23 +33,21 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
         if (result.success) {
           onUnlock(asset.id);
 
-          // Controlla se ci sono contenuti esclusivi sbloccati
-          const exclusiveContent = await realisticZKPService.unlockExclusiveContent(asset);
+          // Check if there are unlocked exclusive contents
+          const exclusiveContent = await productionZKPService.unlockExclusiveContent(asset);
 
           if (exclusiveContent.unlocked) {
-            alert(`NFT sbloccato! 🎉\n\nContenuto esclusivo disponibile:\n${exclusiveContent.content?.description}`);
+            alert(`NFT unlocked! 🎉\n\nExclusive content available:\n${exclusiveContent.content?.description}`);
           } else {
-            alert('NFT sbloccato con successo! 🎉');
+            alert('NFT unlocked successfully! 🎉');
           }
         } else {
-          alert(`Verifica fallita: ${result.error}`);
+          alert(`Verification failed: ${result.error}`);
         }
       } catch (error) {
-        alert('Errore durante la verifica ZKP. Riprova.');
+        alert('Error during ZKP verification. Please try again.');
       }
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -98,7 +93,7 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
         </>
       )}
 
-      {/* Titolo */}
+      {/* Title */}
       <Text
         position={[0, -2.5, 0.1]}
         fontSize={0.3}
@@ -110,7 +105,7 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
         {asset.title}
       </Text>
 
-      {/* Artista */}
+      {/* Artist */}
       <Text
         position={[0, -2.9, 0.1]}
         fontSize={0.2}
@@ -119,10 +114,10 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
         anchorY="middle"
         maxWidth={3}
       >
-        di {asset.artist}
+        by {asset.artist}
       </Text>
 
-      {/* Stato */}
+      {/* Status */}
       <Text
         position={[0, -3.3, 0.1]}
         fontSize={0.15}
@@ -130,7 +125,7 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
         anchorX="center"
         anchorY="middle"
       >
-        {isLoading ? "Verificando ZKP..." : asset.isUnlocked ? "✓ Sbloccato" : "🔒 Clicca per verificare ownership"}
+        {asset.isUnlocked ? "✓ Unlocked" : "🔒 Click to verify ownership"}
       </Text>
 
       {/* Mostra rarity */}
