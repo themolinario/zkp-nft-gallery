@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text, Box, Environment } from '@react-three/drei';
+import { OrbitControls, Text, Box, Environment, useTexture } from '@react-three/drei';
 import { Mesh } from 'three';
 import { NFTAsset } from '../types/zkp';
 import { productionZKPService } from '../services/zkpService';
@@ -13,6 +13,9 @@ interface NFTFrameProps {
 const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
   const meshRef = useRef<Mesh>(null);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Carica la texture dell'immagine
+  const texture = useTexture(asset.imageUrl);
 
   const handleClick = async () => {
     if (asset.isUnlocked) return;
@@ -71,13 +74,23 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
       {/* Contenuto dell'NFT */}
       {asset.isUnlocked ? (
         <Box args={[2.8, 3.8, 0.05]} position={[0, 0, 0.06]}>
-          <meshStandardMaterial color="#fff" />
+          <meshStandardMaterial map={texture} />
         </Box>
       ) : (
         <>
-          {/* Overlay bloccato */}
+          {/* Versione bloccata con immagine sfocata/oscurata */}
           <Box args={[2.8, 3.8, 0.05]} position={[0, 0, 0.06]}>
-            <meshStandardMaterial color="#333" opacity={0.8} transparent={true} />
+            <meshStandardMaterial
+              map={texture}
+              color="#333"
+              opacity={0.3}
+              transparent={true}
+            />
+          </Box>
+
+          {/* Overlay bloccato */}
+          <Box args={[2.8, 3.8, 0.02]} position={[0, 0, 0.07]}>
+            <meshStandardMaterial color="#000" opacity={0.6} transparent={true} />
           </Box>
 
           {/* Icona lucchetto */}
