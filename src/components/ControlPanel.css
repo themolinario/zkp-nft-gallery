@@ -1,338 +1,292 @@
 .control-panel {
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 20px;
   padding: 25px;
-  margin: 20px;
-  color: white;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: white;
+  max-width: 400px;
+  margin: 20px auto;
 }
 
-.control-panel h2 {
-  color: #64ffda;
+.panel-header {
   text-align: center;
   margin-bottom: 30px;
-  font-size: 1.8rem;
 }
 
-.control-panel h3 {
-  color: #bb86fc;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #bb86fc;
-  padding-bottom: 5px;
-}
-
-.stats-section {
-  margin-bottom: 30px;
-}
-
-.stats {
-  display: flex;
-  justify-content: space-around;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 20px;
-  margin-top: 15px;
-}
-
-.stat {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 2.5rem;
-  font-weight: bold;
+.panel-header h2 {
+  margin: 0 0 10px 0;
   color: #64ffda;
-  margin-bottom: 5px;
+  font-size: 1.5rem;
 }
 
-.stat-label {
-  font-size: 0.9rem;
+.panel-header p {
+  margin: 0;
   color: #ccc;
+  font-size: 0.9rem;
 }
 
-.keys-section {
-  margin-bottom: 30px;
-}
-
-.no-keys {
-  text-align: center;
-  padding: 30px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-}
-
-.generate-btn, .regenerate-btn {
-  background: linear-gradient(45deg, #bb86fc, #64ffda);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 25px;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 15px;
-}
-
-.generate-btn:hover, .regenerate-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(187, 134, 252, 0.4);
-}
-
-.generate-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.keys-display {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.key-item {
-  margin-bottom: 20px;
-}
-
-.key-item label {
-  display: block;
-  color: #bb86fc;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.key-value {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.key-value span {
-  flex: 1;
-  font-family: monospace;
-  color: #64ffda;
-  margin-right: 10px;
-  word-break: break-all;
-}
-
-.key-value button {
-  background: rgba(100, 255, 218, 0.2);
-  border: 1px solid #64ffda;
-  border-radius: 5px;
-  padding: 5px 10px;
-  color: #64ffda;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.key-value button:hover {
-  background: rgba(100, 255, 218, 0.3);
-}
-
-.key-item small {
-  color: #f44336;
-  font-style: italic;
-  display: block;
-  margin-top: 5px;
-}
-
-.info-section {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.info-section ul {
-  list-style: none;
-  padding: 0;
-}
-
-.info-section li {
-  padding: 8px 0;
+.wallet-status,
+.reputation-section,
+.unlocked-section,
+.actions-section,
+.stats-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.info-section li:last-child {
+.wallet-status:last-child,
+.reputation-section:last-child,
+.unlocked-section:last-child,
+.actions-section:last-child,
+.stats-section:last-child {
   border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
-.demo-keys {
-  margin-top: 20px;
-  padding: 15px;
-  background: rgba(255, 193, 7, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 193, 7, 0.3);
+.wallet-status h3,
+.reputation-section h3,
+.unlocked-section h3,
+.actions-section h3,
+.stats-section h3 {
+  margin: 0 0 15px 0;
+  color: #bb86fc;
+  font-size: 1.1rem;
 }
 
-.demo-keys h4 {
-  color: #ffc107;
+.connected-info,
+.disconnected-info {
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
   margin-bottom: 10px;
 }
 
-.demo-keys p {
-  margin: 5px 0;
-  font-family: monospace;
-  color: #fff3cd;
+.status-badge.connected {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
 }
 
-.reputation-section {
-  margin-bottom: 30px;
+.status-badge.disconnected {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid #f44336;
 }
 
-.reputation-display {
+.wallet-address {
+  font-family: 'Courier New', monospace;
+  color: #64ffda;
+  font-size: 0.8rem;
+  margin: 10px 0;
+  background: rgba(100, 255, 218, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(100, 255, 218, 0.3);
+}
+
+.disconnect-button {
+  background: linear-gradient(45deg, #f44336, #d32f2f);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.disconnect-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+}
+
+.reputation-card {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
   padding: 20px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.verification-level {
-  text-align: center;
-  margin-bottom: 20px;
+.achievement-level {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.level-badge {
-  padding: 8px 20px;
-  border-radius: 25px;
+.level-icon {
+  font-size: 1.5rem;
+}
+
+.level-text {
   font-weight: bold;
   font-size: 1.1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
-.reputation-stats {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
-}
-
-.rep-stat {
-  text-align: center;
+.reputation-points {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
-.rep-value {
+.points-number {
   font-size: 1.8rem;
   font-weight: bold;
   color: #64ffda;
-  margin-bottom: 5px;
 }
 
-.rep-label {
+.points-label {
   font-size: 0.8rem;
   color: #ccc;
 }
 
-.achievements {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 15px;
-}
-
-.achievements h4 {
-  color: #FFD700;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.achievement {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 10px;
-}
-
-.achievement-icon {
-  font-size: 1.5rem;
-  margin-right: 10px;
-}
-
-.achievement-info {
-  flex: 1;
-}
-
-.achievement-info strong {
-  color: #FFD700;
-  display: block;
-  margin-bottom: 3px;
-}
-
-.achievement-info p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #ccc;
-}
-
-.reset-btn:hover {
-  background: #d32f2f !important;
-  transform: translateY(-2px);
-}
-
-.unlocked-nfts-section {
-  margin-bottom: 30px;
-}
-
 .unlocked-nfts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  padding: 15px;
-  margin-top: 15px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .unlocked-nft-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  background: rgba(76, 175, 80, 0.2);
-  border: 1px solid rgba(76, 175, 80, 0.5);
-  border-radius: 8px;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.unlocked-nft-item:last-child {
+  margin-bottom: 0;
 }
 
 .nft-title {
-  font-weight: bold;
-  color: #fff;
-  flex: 1;
+  color: #64ffda;
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
-.nft-rarity {
+.nft-artist {
+  color: #bb86fc;
   font-size: 0.8rem;
+}
+
+.no-nfts {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+  margin: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.reset-button {
+  background: linear-gradient(45deg, #ff9800, #f57c00);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 0.9rem;
   font-weight: bold;
-  margin: 0 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.exclusive-indicator {
+.reset-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+}
+
+.reset-button:disabled {
+  background: rgba(255, 152, 0, 0.3);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 15px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #64ffda;
+  margin-bottom: 5px;
+}
+
+.stat-label {
   font-size: 0.8rem;
-  background: rgba(255, 215, 0, 0.2);
-  border: 1px solid rgba(255, 215, 0, 0.5);
-  border-radius: 12px;
-  padding: 2px 8px;
-  color: #FFD700;
+  color: #ccc;
 }
 
-@media (max-width: 768px) {
+/* Scrollbar styling for unlocked NFTs list */
+.unlocked-nfts-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.unlocked-nfts-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.unlocked-nfts-list::-webkit-scrollbar-thumb {
+  background: rgba(100, 255, 218, 0.5);
+  border-radius: 3px;
+}
+
+.unlocked-nfts-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 255, 218, 0.7);
+}
+
+@media (max-width: 480px) {
   .control-panel {
     margin: 10px;
-    padding: 15px;
+    padding: 20px;
+    max-width: none;
   }
 
-  .stats {
+  .reputation-card {
     flex-direction: column;
     gap: 15px;
+    text-align: center;
   }
 
-  .stat-value {
-    font-size: 2rem;
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .unlocked-nft-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
   }
 }

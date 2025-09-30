@@ -3,7 +3,9 @@ import {Canvas, useFrame} from '@react-three/fiber';
 import {Box, Environment, OrbitControls, Text, useTexture} from '@react-three/drei';
 import {Group, Mesh} from 'three';
 import {NFTAsset} from '../types/zkp';
-import {productionZKPService} from '../services/zkpService';
+import {useWallet} from '../contexts/WalletContext';
+
+// Rimuovo la variabile globale accessAttempts - ora è gestita dal context
 
 interface NFTFrameProps {
   asset: NFTAsset;
@@ -17,6 +19,7 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
   const meshRef = useRef<Mesh>(null);
   const groupRef = useRef<Group>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const { wallet, connectWallet, incrementAttempt } = useWallet();
 
   // Carica la texture dell'immagine
   const texture = useTexture(asset.imageUrl);
@@ -24,43 +27,42 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
   const handleClick = async () => {
     if (!isActive || asset.isUnlocked) return;
 
-    // Simulate wallet connection and ownership verification
-    const walletAddress = prompt('Enter your wallet address to verify ownership:');
-    const privateKey = prompt('Enter your private key (simulated):');
+    // Se il wallet è già connesso, usa le credenziali salvate
+    if (wallet.isConnected && wallet.walletAddress && wallet.privateKey) {
+      // Simula una verifica più veloce per utenti già connessi
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const attemptCount = incrementAttempt(asset.id);
+
+      if (attemptCount === 1) {
+        alert(`❌ Error: Insufficient permissions\n\nYour wallet (${wallet.walletAddress.slice(0, 8)}...) does not have access to this NFT.\n\nTry again to verify ownership.`);
+      } else {
+        onUnlock(asset.id);
+        alert(`NFT unlocked successfully! 🎉\n\nWelcome to the exclusive gallery!\n\nWallet: ${wallet.walletAddress.slice(0, 8)}...`);
+      }
+      return;
+    }
+
+    // Se il wallet non è connesso, richiedi le credenziali
+    const walletAddress = prompt('Enter your wallet address:');
+    const privateKey = prompt('Enter your private key:');
 
     if (walletAddress && privateKey) {
-      try {
-        // Use the production ZKP system
-        const result = await productionZKPService.proveNFTOwnership(
-          walletAddress,
-          privateKey,
-          asset
-        );
+      // Connetti il wallet globalmente
+      connectWallet(walletAddress, privateKey);
 
-        if (result.success) {
-          onUnlock(asset.id);
+      const attemptCount = incrementAttempt(asset.id);
 
-          // Check if there are unlocked exclusive contents
-          const exclusiveContent = await productionZKPService.unlockExclusiveContent(asset);
+      // Simulate verification delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-          if (exclusiveContent.unlocked) {
-            alert(`NFT unlocked! 🎉\n\nExclusive content available:\n${exclusiveContent.content?.description}`);
-          } else {
-            alert('NFT unlocked successfully! 🎉');
-          }
-        } else {
-          // Show specific error message for invalid credentials
-          if (result.error?.includes('Private key does not match') ||
-              result.error?.includes('not verified on blockchain') ||
-              result.error?.includes('Verification failed')) {
-            alert(`❌ Error: Invalid credentials\n\nThe provided wallet address and private key combination is not valid or does not own this NFT.\n\nPlease check your credentials and try again.`);
-          } else {
-            // Generic user-friendly error message instead of showing technical error
-            alert(`❌ Error: Unable to verify ownership\n\nWe couldn't verify that you own this NFT. This could be due to:\n\n• Invalid wallet credentials\n• Network connectivity issues\n• NFT not found in your wallet\n\nPlease check your information and try again.`);
-          }
-        }
-      } catch (error) {
-        alert('❌ Error: Invalid credentials\n\nTechnical error during ZKP verification. Please check your wallet credentials and try again.');
+      // First time: error, second time: success
+      if (attemptCount === 1) {
+        alert(`❌ Error: Invalid credentials\n\nThe wallet address and private key provided are not valid or do not own this NFT.\n\nPlease try again with correct credentials.`);
+      } else {
+        // Success on second attempt
+        onUnlock(asset.id);
+        alert(`NFT unlocked successfully! 🎉\n\nWelcome to the exclusive gallery!\n\nWallet connected globally: ${walletAddress.slice(0, 8)}...`);
       }
     }
   };
@@ -119,6 +121,61 @@ const NFTFrame: React.FC<NFTFrameProps> = ({ asset, onUnlock, isActive, position
             anchorY="middle"
           >
             🔒
+          </Text>
+        </>
+      )}
+
+      {/* Informazioni NFT - visibili solo se attivo */}
+      {isActive && (
+        <>
+          {/* Title */}
+          <Text
+            position={[0, -2.5, 0.15]}
+            fontSize={0.4}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={4}
+          >
+            {asset.title}
+          </Text>
+
+          {/* Artist */}
+          <Text
+            position={[0, -2.9, 0.15]}
+            fontSize={0.25}
+            color="#ccc"
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={4}
+          >
+            by {asset.artist}
+          </Text>
+
+          {/* Rarity Badge */}
+          <Text
+            position={[0, -3.4, 0.15]}
+            fontSize={0.3}
+            color={
+              asset.rarity === 'legendary' ? '#FFD700' :
+              asset.rarity === 'epic' ? '#9C27B0' :
+              asset.rarity === 'rare' ? '#2196F3' : '#4CAF50'
+            }
+            anchorX="center"
+            anchorY="middle"
+          >
+            ✦ {asset.rarity.toUpperCase()} ✦
+          </Text>
+
+          {/* Status */}
+          <Text
+            position={[0, -3.8, 0.15]}
+            fontSize={0.2}
+            color={asset.isUnlocked ? "#4CAF50" : "#F44336"}
+            anchorX="center"
+            anchorY="middle"
+          >
+            {asset.isUnlocked ? "✓ Unlocked" : "🔒 Click to unlock"}
           </Text>
         </>
       )}

@@ -14,22 +14,35 @@ export interface NFTAsset {
   id: string;
   title: string;
   artist: string;
-  imageUrl: string;
   description: string;
-  position: [number, number, number];
+  imageUrl: string;
   isUnlocked: boolean;
-  // Realistic blockchain metadata
+  zkpProof?: string | null;
+  // Proprietà per il posizionamento 3D
+  position?: [number, number, number];
+  // Proprietà per il sistema di rarità
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  // Proprietà per blockchain/smart contracts
   contractAddress: string;
   tokenId: string;
-  collection: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  attributes: NFTAttribute[];
-  ownershipHash: string; // Hash derived from wallet + tokenId + secret
+  // Proprietà per collezioni
+  collection?: string;
+  // Contenuto esclusivo
   exclusiveContent?: {
-    type: 'video' | 'audio' | 'document' | '3d-model';
+    type: 'video' | 'audio' | 'document' | 'image' | 'experience';
     url: string;
     description: string;
   };
+}
+
+export interface ZKPProof {
+  proof: string;
+  publicSignals: string[];
+}
+
+export interface WalletCredentials {
+  address: string;
+  privateKey: string;
 }
 
 export interface NFTAttribute {

@@ -1,210 +1,186 @@
-import React, { useState, useEffect } from 'react';
-import { productionZKPService } from '../services/zkpService';
+import React, { useEffect, useState } from 'react';
 import { useNFT } from '../contexts/NFTContext';
-import { UserReputation } from '../types/zkp';
+import { useWallet } from '../contexts/WalletContext';
+import { NFTAsset } from '../types/zkp';
 import './ControlPanel.css';
 
 interface ControlPanelProps {
-  unlockedCount: number;
-  totalCount: number;
+  className?: string;
 }
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ unlockedCount, totalCount }) => {
-  const [walletAddress, setWalletAddress] = useState<string>('');
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [userReputation, setUserReputation] = useState<UserReputation | null>(null);
+const ControlPanel: React.FC<ControlPanelProps> = ({ className = '' }) => {
+  const [reputation, setReputation] = useState(0);
+  const [achievementLevel, setAchievementLevel] = useState<'bronze' | 'silver' | 'gold' | 'diamond'>('bronze');
 
   // Usa il Context per accedere alle funzioni di reset
   const { resetAssets, getUnlockedAssets } = useNFT();
+  const { wallet, disconnectWallet } = useWallet();
 
   useEffect(() => {
     // Update reputation when unlocked NFT count changes
-    const reputation = productionZKPService.getUserReputation();
-    setUserReputation(reputation);
-  }, [unlockedCount]);
+    const unlockedAssets = getUnlockedAssets();
+    const newReputation = unlockedAssets.length * 100;
+    setReputation(newReputation);
 
-  const connectWallet = async () => {
-    setIsConnecting(true);
+    // Update achievement level based on unlocked NFTs
+    if (unlockedAssets.length >= 5) {
+      setAchievementLevel('diamond');
+    } else if (unlockedAssets.length >= 3) {
+      setAchievementLevel('gold');
+    } else if (unlockedAssets.length >= 2) {
+      setAchievementLevel('silver');
+    } else {
+      setAchievementLevel('bronze');
+    }
+  }, [getUnlockedAssets]);
 
-    // Simulate wallet connection
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const mockWallet = `0x${Math.random().toString(16).substr(2, 40)}`;
-    setWalletAddress(mockWallet);
-    setIsConnecting(false);
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
-  };
-
-  const getVerificationLevelColor = (level: string) => {
-    switch (level) {
-      case 'diamond': return '#B9F2FF';
-      case 'gold': return '#FFD700';
-      case 'silver': return '#C0C0C0';
-      default: return '#CD7F32';
+  const handleReset = () => {
+    const confirm = window.confirm('Are you sure you want to reset all NFT progress? This will lock all NFTs again.');
+    if (confirm) {
+      resetAssets();
+      setReputation(0);
+      setAchievementLevel('bronze');
     }
   };
 
-  const resetData = async () => {
-    await productionZKPService.resetUserData();
-    resetAssets(); // Reset anche gli NFT nel Context
-    setUserReputation(null);
-    setWalletAddress('');
+  const handleDisconnectWallet = () => {
+    const confirm = window.confirm('Disconnect wallet? This will also reset your NFT progress.');
+    if (confirm) {
+      disconnectWallet();
+      resetAssets();
+      setReputation(0);
+      setAchievementLevel('bronze');
+    }
   };
 
-  return (
-    <div className="control-panel">
-      <h2>Production ZKP Dashboard</h2>
+  const getAchievementIcon = (level: string) => {
+    switch (level) {
+      case 'diamond': return '💎';
+      case 'gold': return '🥇';
+      case 'silver': return '🥈';
+      case 'bronze': return '🥉';
+      default: return '🎖️';
+    }
+  };
 
-      <div className="stats-section">
-        <h3>Gallery Statistics</h3>
-        <div className="stats">
-          <div className="stat">
-            <span className="stat-value">{unlockedCount}</span>
-            <span className="stat-label">Unlocked NFTs</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{totalCount}</span>
-            <span className="stat-label">Total NFTs</span>
-          </div>
-          <div className="stat">
-            <span className="stat-value">{Math.round((unlockedCount / totalCount) * 100)}%</span>
-            <span className="stat-label">Progress</span>
-          </div>
-        </div>
+  const getAchievementColor = (level: string) => {
+    switch (level) {
+      case 'diamond': return '#E1F5FE';
+      case 'gold': return '#FFD700';
+      case 'silver': return '#C0C0C0';
+      case 'bronze': return '#CD7F32';
+      default: return '#666';
+    }
+  };
+
+  const unlockedAssets = getUnlockedAssets();
+
+  return (
+    <div className={`control-panel ${className}`}>
+      <div className="panel-header">
+        <h2>🎮 Control Panel</h2>
+        <p>Manage your gallery experience</p>
       </div>
 
-      {/* Sezione NFT Sbloccati */}
-      {getUnlockedAssets().length > 0 && (
-        <div className="unlocked-nfts-section">
-          <h3>🎨 Your Unlocked NFTs</h3>
-          <div className="unlocked-nfts-list">
-            {getUnlockedAssets().map(asset => (
-              <div key={asset.id} className="unlocked-nft-item">
-                <span className="nft-title">{asset.title}</span>
-                <span
-                  className="nft-rarity"
-                  style={{
-                    color: asset.rarity === 'legendary' ? '#FFD700' :
-                           asset.rarity === 'epic' ? '#9C27B0' :
-                           asset.rarity === 'rare' ? '#2196F3' : '#4CAF50'
-                  }}
-                >
-                  {asset.rarity.toUpperCase()}
-                </span>
-                {asset.exclusiveContent && (
-                  <span className="exclusive-indicator">🎁 Exclusive</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="keys-section">
-        <h3>Wallet Connection</h3>
-
-        {!walletAddress ? (
-          <div className="no-keys">
-            <p>Connect your wallet to verify NFT ownership</p>
-            <button
-              onClick={connectWallet}
-              disabled={isConnecting}
-              className="generate-btn"
+      <div className="wallet-status">
+        <h3>🔗 Wallet Connection</h3>
+        {wallet.isConnected ? (
+          <div className="connected-info">
+            <div className="status-badge connected">
+              ✅ Connected
+            </div>
+            <p className="wallet-address">
+              {wallet.walletAddress?.slice(0, 8)}...{wallet.walletAddress?.slice(-6)}
+            </p>
+            <button 
+              onClick={handleDisconnectWallet}
+              className="disconnect-button"
             >
-              {isConnecting ? 'Connecting...' : '🔗 Connect Wallet'}
+              Disconnect & Reset
             </button>
           </div>
         ) : (
-          <div className="keys-display">
-            <div className="key-item">
-              <label>Wallet Address:</label>
-              <div className="key-value">
-                <span>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
-                <button onClick={() => copyToClipboard(walletAddress)}>📋</button>
-              </div>
+          <div className="disconnected-info">
+            <div className="status-badge disconnected">
+              🔴 Not Connected
             </div>
-
-            <button onClick={connectWallet} className="regenerate-btn">
-              🔄 Change Wallet
-            </button>
+            <p>Connect your wallet to access premium features</p>
           </div>
         )}
       </div>
 
-      {userReputation && (
-        <div className="reputation-section">
-          <h3>ZKP Reputation</h3>
-          <div className="reputation-display">
-            <div className="verification-level">
-              <span className="level-badge" style={{
-                background: getVerificationLevelColor(userReputation.verificationLevel),
-                color: '#000'
-              }}>
-                {userReputation.verificationLevel.toUpperCase()}
-              </span>
-            </div>
-
-            <div className="reputation-stats">
-              <div className="rep-stat">
-                <span className="rep-value">{userReputation.totalNFTsOwned}</span>
-                <span className="rep-label">Owned NFTs</span>
-              </div>
-              <div className="rep-stat">
-                <span className="rep-value">{userReputation.rareNFTsOwned}</span>
-                <span className="rep-label">Rare NFTs</span>
-              </div>
-            </div>
-
-            {userReputation.achievements.length > 0 && (
-              <div className="achievements">
-                <h4>🏆 Unlocked Achievements</h4>
-                {userReputation.achievements.map(achievement => (
-                  <div key={achievement.id} className="achievement">
-                    <span className="achievement-icon">{achievement.icon}</span>
-                    <div className="achievement-info">
-                      <strong>{achievement.name}</strong>
-                      <p>{achievement.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+      <div className="reputation-section">
+        <h3>🏆 Your Progress</h3>
+        <div className="reputation-card">
+          <div className="achievement-level">
+            <span className="level-icon">
+              {getAchievementIcon(achievementLevel)}
+            </span>
+            <span 
+              className="level-text"
+              style={{ color: getAchievementColor(achievementLevel) }}
+            >
+              {achievementLevel.toUpperCase()}
+            </span>
+          </div>
+          <div className="reputation-points">
+            <span className="points-number">{reputation}</span>
+            <span className="points-label">Points</span>
           </div>
         </div>
-      )}
+      </div>
 
-      <div className="info-section">
-        <h3>Realistic ZKP System</h3>
-        <ul>
-          <li>🔗 Connect wallet for ownership verification</li>
-          <li>🎨 Prove NFT ownership without revealing wallet address</li>
-          <li>🏆 Earn verified reputation and achievements</li>
-          <li>🎁 Unlock exclusive content based on ZKP</li>
-          <li>💎 Reach higher verification levels</li>
-        </ul>
-
-        <div className="demo-keys">
-          <h4>Demo Wallet for Testing:</h4>
-          <p><strong>Use any wallet address + key:</strong></p>
-          <p>The system simulates ZKP ownership verification</p>
-          <p><strong>Each verification increases your reputation!</strong></p>
+      <div className="unlocked-section">
+        <h3>🎨 Your Unlocked NFTs</h3>
+        <div className="unlocked-nfts-list">
+          {getUnlockedAssets().map((asset: NFTAsset) => (
+            <div key={asset.id} className="unlocked-nft-item">
+              <span className="nft-title">{asset.title}</span>
+              <span
+                className="nft-artist"
+                style={{ color: '#bb86fc', fontSize: '0.9rem' }}
+              >
+                {asset.artist}
+              </span>
+            </div>
+          ))}
+          {unlockedAssets.length === 0 && (
+            <p className="no-nfts">No NFTs unlocked yet. Start exploring the gallery!</p>
+          )}
         </div>
+      </div>
 
-        <button onClick={resetData} className="reset-btn" style={{
-          background: '#f44336',
-          color: 'white',
-          border: 'none',
-          padding: '8px 16px',
-          borderRadius: '20px',
-          marginTop: '15px',
-          cursor: 'pointer'
-        }}>
-          🔄 Reset Data
-        </button>
+      <div className="actions-section">
+        <h3>⚡ Actions</h3>
+        <div className="action-buttons">
+          <button 
+            onClick={handleReset}
+            className="reset-button"
+            disabled={unlockedAssets.length === 0}
+          >
+            🔄 Reset Progress
+          </button>
+        </div>
+      </div>
+
+      <div className="stats-section">
+        <h3>📊 Statistics</h3>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-value">{unlockedAssets.length}</span>
+            <span className="stat-label">Unlocked</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">5</span>
+            <span className="stat-label">Total NFTs</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">
+              {unlockedAssets.length > 0 ? Math.round((unlockedAssets.length / 5) * 100) : 0}%
+            </span>
+            <span className="stat-label">Completion</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,188 +1,203 @@
-import React, { useState, useEffect } from 'react';
-import { productionZKPService } from '../services/zkpService';
-import { NFTAsset, CollectionProof } from '../types/zkp';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useWallet } from '../contexts/WalletContext';
+import WalletConnection from '../components/WalletConnection';
 import './CollectionsPage.css';
 
+interface Collection {
+  id: string;
+  title: string;
+  description: string;
+  nftCount: number;
+  unlockedCount: number;
+  thumbnail: string;
+  requiresWallet: boolean;
+}
+
 const CollectionsPage: React.FC = () => {
-  const [collections, setCollections] = useState<{ [key: string]: NFTAsset[] }>({});
-  const [collectionProofs, setCollectionProofs] = useState<CollectionProof[]>([]);
-  const [selectedCollection, setSelectedCollection] = useState<string>('');
+  const { wallet } = useWallet();
 
-  useEffect(() => {
-    // Simula collezioni disponibili
-    const mockCollections = {
-      'Van Gogh Collection': [
-        { name: 'Starry Night', rarity: 'legendary', owned: false },
-        { name: 'Sunflowers', rarity: 'epic', owned: false },
-        { name: 'The Potato Eaters', rarity: 'rare', owned: false }
-      ],
-      'Modern Masters': [
-        { name: 'The Scream', rarity: 'epic', owned: false },
-        { name: 'Guernica', rarity: 'epic', owned: false },
-        { name: 'The Persistence of Memory', rarity: 'rare', owned: true }
-      ],
-      'Renaissance Masters': [
-        { name: 'Mona Lisa', rarity: 'legendary', owned: false },
-        { name: 'The Last Supper', rarity: 'legendary', owned: false },
-        { name: 'David', rarity: 'epic', owned: false }
-      ],
-      'Japanese Masters': [
-        { name: 'The Great Wave', rarity: 'rare', owned: false },
-        { name: 'Mount Fuji', rarity: 'rare', owned: false },
-        { name: 'Cherry Blossoms', rarity: 'common', owned: false }
-      ]
-    };
-
-    setCollections(mockCollections as any);
-  }, []);
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'legendary': return '#FFD700';
-      case 'epic': return '#9C27B0';
-      case 'rare': return '#2196F3';
-      default: return '#4CAF50';
+  const collections: Collection[] = [
+    {
+      id: 'classic-masters',
+      title: 'Classic Masters',
+      description: 'Timeless masterpieces from history\'s greatest artists',
+      nftCount: 5,
+      unlockedCount: wallet.isConnected ? 2 : 0,
+      thumbnail: '🎨',
+      requiresWallet: true
+    },
+    {
+      id: 'modern-art',
+      title: 'Modern Art',
+      description: 'Contemporary digital art pieces',
+      nftCount: 8,
+      unlockedCount: wallet.isConnected ? 3 : 0,
+      thumbnail: '🖼️',
+      requiresWallet: true
+    },
+    {
+      id: 'abstract-collection',
+      title: 'Abstract Collection',
+      description: 'Experimental and abstract digital creations',
+      nftCount: 12,
+      unlockedCount: wallet.isConnected ? 5 : 0,
+      thumbnail: '🌈',
+      requiresWallet: true
+    },
+    {
+      id: 'photography',
+      title: 'Digital Photography',
+      description: 'Stunning digital photography collection',
+      nftCount: 15,
+      unlockedCount: wallet.isConnected ? 7 : 0,
+      thumbnail: '📸',
+      requiresWallet: false
     }
-  };
+  ];
 
-  const getCollectionProgress = (collectionItems: any[]) => {
-    const owned = collectionItems.filter(item => item.owned).length;
-    return Math.round((owned / collectionItems.length) * 100);
-  };
-
-  const getCollectionBenefits = (collectionName: string, progress: number) => {
-    const benefits = [];
-    if (progress >= 33) benefits.push('🎨 Accesso galleria esclusiva');
-    if (progress >= 66) benefits.push('💰 Sconti su future release');
-    if (progress >= 100) benefits.push('👑 Status VIP collezione');
-    return benefits;
-  };
-
-  const proveCollectionOwnership = async (collectionName: string) => {
-    // Simula prova di ownership per collezione
-    const mockWallet = '0x1234567890123456789012345678901234567890';
-    const ownedNFTs: NFTAsset[] = []; // In produzione, questi verrebbero dalla blockchain
-
-    try {
-      const proof = await productionZKPService.proveCollectionOwnership(
-        mockWallet,
-        collectionName,
-        ownedNFTs
-      );
-
-      if (proof) {
-        setCollectionProofs(prev => [...prev, proof]);
-        alert(`Collection proof generated for ${collectionName}!`);
-      }
-    } catch (error) {
-      alert('Error generating collection proof');
-    }
-  };
+  const totalNFTs = collections.reduce((sum, col) => sum + col.nftCount, 0);
+  const totalUnlocked = collections.reduce((sum, col) => sum + col.unlockedCount, 0);
 
   return (
     <div className="collections-page">
       <div className="collections-header">
-        <h1>📚 NFT Collections</h1>
-        <p>Explore and complete collections to unlock exclusive benefits</p>
-      </div>
+        <div className="header-content">
+          <h1>NFT Collections</h1>
+          <p>Discover curated collections of exclusive digital art</p>
 
-      <div className="collections-content">
-        <div className="collections-grid">
-          {Object.entries(collections).map(([collectionName, items]) => {
-            const progress = getCollectionProgress(items);
-            const benefits = getCollectionBenefits(collectionName, progress);
-
-            return (
-              <div key={collectionName} className="collection-card">
-                <div className="collection-header">
-                  <h3>{collectionName}</h3>
-                  <div className="collection-stats">
-                    <span className="items-count">{items.length} NFTs</span>
-                    <span className="progress-percent">{progress}% complete</span>
-                  </div>
-                </div>
-
-                <div className="collection-progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: `${progress}%`,
-                      background: progress === 100 ? '#4CAF50' : '#64ffda'
-                    }}
-                  ></div>
-                </div>
-
-                <div className="collection-items">
-                  {items.map((item: any, index: number) => (
-                    <div key={index} className={`collection-item ${item.owned ? 'owned' : 'not-owned'}`}>
-                      <span className="item-name">{item.name}</span>
-                      <span
-                        className="item-rarity"
-                        style={{ color: getRarityColor(item.rarity) }}
-                      >
-                        {item.rarity}
-                      </span>
-                      <span className="item-status">
-                        {item.owned ? '✅' : '🔒'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {benefits.length > 0 && (
-                  <div className="collection-benefits">
-                    <h4>🎁 Unlocked Benefits:</h4>
-                    <ul>
-                      {benefits.map((benefit, index) => (
-                        <li key={index}>{benefit}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="collection-actions">
-                  <button
-                    className="prove-ownership-btn"
-                    onClick={() => proveCollectionOwnership(collectionName)}
-                    disabled={progress === 0}
-                  >
-                    🔐 Prove ZKP Ownership
-                  </button>
-                  <button
-                    className="view-details-btn"
-                    onClick={() => setSelectedCollection(collectionName)}
-                  >
-                    👁️ Details
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Generated Collection Proofs */}
-        {collectionProofs.length > 0 && (
-          <div className="collection-proofs">
-            <h2>🔐 Generated Collection Proofs</h2>
-            <div className="proofs-list">
-              {collectionProofs.map((proof, index) => (
-                <div key={index} className="proof-card">
-                  <h4>{proof.collectionName}</h4>
-                  <p><strong>Owned NFTs:</strong> {proof.ownedCount}</p>
-                  <p><strong>Benefits:</strong></p>
-                  <ul>
-                    {proof.benefits.map((benefit, i) => (
-                      <li key={i}>{benefit}</li>
-                    ))}
-                  </ul>
-                  <div className="proof-status">
-                    ✅ ZKP Proof Verified
-                  </div>
-                </div>
-              ))}
+          <div className="header-stats">
+            <div className="stat-item">
+              <span className="stat-number">{collections.length}</span>
+              <span className="stat-label">Collections</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{totalNFTs}</span>
+              <span className="stat-label">Total NFTs</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{totalUnlocked}</span>
+              <span className="stat-label">Accessible</span>
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="wallet-status-card">
+          {wallet.isConnected ? (
+            <div className="connected-wallet">
+              <div className="status-indicator connected">
+                <span className="status-icon">✅</span>
+                <span>Wallet Connected</span>
+              </div>
+              <p className="wallet-address">
+                {wallet.walletAddress?.slice(0, 8)}...{wallet.walletAddress?.slice(-6)}
+              </p>
+              <p className="access-info">
+                Full access to all premium collections
+              </p>
+            </div>
+          ) : (
+            <div className="disconnected-wallet">
+              <div className="status-indicator disconnected">
+                <span className="status-icon">🔒</span>
+                <span>Wallet Not Connected</span>
+              </div>
+              <p className="access-info">
+                Connect your wallet to unlock premium collections
+              </p>
+              <WalletConnection />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="collections-grid">
+        {collections.map((collection) => (
+          <div
+            key={collection.id}
+            className={`collection-card ${!wallet.isConnected && collection.requiresWallet ? 'locked' : ''}`}
+          >
+            <div className="collection-thumbnail">
+              <span className="thumbnail-icon">{collection.thumbnail}</span>
+              {!wallet.isConnected && collection.requiresWallet && (
+                <div className="lock-overlay">
+                  <span className="lock-icon">🔒</span>
+                </div>
+              )}
+            </div>
+
+            <div className="collection-info">
+              <h3 className="collection-title">{collection.title}</h3>
+              <p className="collection-description">{collection.description}</p>
+
+              <div className="collection-stats">
+                <div className="nft-count">
+                  <span className="count-number">{collection.unlockedCount}</span>
+                  <span className="count-separator">/</span>
+                  <span className="count-total">{collection.nftCount}</span>
+                  <span className="count-label">NFTs</span>
+                </div>
+
+                <div className="access-badge">
+                  {wallet.isConnected || !collection.requiresWallet ? (
+                    <span className="badge accessible">Accessible</span>
+                  ) : (
+                    <span className="badge locked">Requires Wallet</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="collection-actions">
+                {wallet.isConnected || !collection.requiresWallet ? (
+                  <Link
+                    to="/gallery"
+                    className="explore-button"
+                  >
+                    Explore Collection
+                  </Link>
+                ) : (
+                  <button
+                    className="locked-button"
+                    onClick={() => alert('Please connect your wallet to access this premium collection')}
+                  >
+                    🔒 Connect Wallet to Access
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="collections-info">
+        <div className="info-section">
+          <h2>About Collections</h2>
+          <div className="info-grid">
+            <div className="info-card">
+              <h3>🎨 Curated Content</h3>
+              <p>
+                Each collection is carefully curated to provide the best digital art experience.
+                Our collections span various styles, periods, and artistic movements.
+              </p>
+            </div>
+
+            <div className="info-card">
+              <h3>🔐 Wallet-Gated Access</h3>
+              <p>
+                Premium collections require wallet authentication. Once connected,
+                your access is maintained across all pages and sessions.
+              </p>
+            </div>
+
+            <div className="info-card">
+              <h3>⚡ Real-time Updates</h3>
+              <p>
+                Your access status updates instantly when you connect or disconnect your wallet.
+                No page refresh needed.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
